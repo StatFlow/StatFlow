@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="BLT.Mailer.Config" xmlns:mstns="http://tempuri.org/BLT.Mailer.Config.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="mailer_config">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="clients" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="client" type="MailerClientConfig" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="security_categories" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="security_category" type="SecurityCategoryConfig" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="test" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="test_mailbox" type="TestMailbox" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:complexType name="ActionBase">
+    <xs:attribute name="name" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>A name of the action to use in logging and error messsages</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="ActionDerived">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="ack_email" type="ack_email" minOccurs="0" maxOccurs="unbounded">
+      </xs:element>
+      <xs:element name="save_attachments" type="save_attachments" minOccurs="0" maxOccurs="unbounded">
+      </xs:element>
+      <xs:element name="save_eml" type="save_eml" minOccurs="0" maxOccurs="unbounded">
+      </xs:element>
+      <xs:element name="api_call" type="api_call" minOccurs="0" maxOccurs="unbounded">
+      </xs:element>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="DeliveryServiceConfig">
+    <xs:attribute name="id" type="xs:token" use="required">
+    </xs:attribute>
+    <xs:attribute name="url" type="xs:string" use="required">
+    </xs:attribute>
+    <xs:attribute name="port" type="xs:int" use="optional" default="0">
+    </xs:attribute>
+    <xs:attribute name="use_by_default" type="xs:boolean" use="optional" default="0">
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="DeliveryServicesDerived">
+    <xs:choice minOccurs="0" maxOccurs="1">
+      <xs:element name="SmtpConfig" type="SmtpConfig" minOccurs="0" maxOccurs="1">
+      </xs:element>
+      <xs:element name="ImapConfig" type="ImapConfig" minOccurs="0" maxOccurs="1">
+      </xs:element>
+      <xs:element name="GraphApiConfig" type="GraphApiConfig" minOccurs="0" maxOccurs="1">
+      </xs:element>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="GraphApiConfig">
+    <xs:complexContent>
+      <xs:extension base="DeliveryServiceConfig">
+        <xs:attribute name="use_proxy" type="xs:boolean" use="required">
+        </xs:attribute>
+        <xs:attribute name="client_id" type="xs:string" use="required">
+        </xs:attribute>
+        <xs:attribute name="tenant_id" type="xs:string" use="required">
+        </xs:attribute>
+        <xs:attribute name="client_secret_encrypted" type="xs:string" use="required">
+        </xs:attribute>
+        <xs:attribute name="login_url" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>Url used to get Graph API access token</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="address" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>User email that work as personal Id. Used as default from address if not speciefied in the client's Rest API call</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="ImapConfig">
+    <xs:complexContent>
+      <xs:extension base="DeliveryServiceConfig">
+        <xs:attribute name="use_ssl" type="xs:boolean" use="required">
+        </xs:attribute>
+        <xs:attribute name="login" type="xs:string" use="required">
+        </xs:attribute>
+        <xs:attribute name="password_encrypted" type="xs:string" use="required">
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="MailerClientConfig">
+    <xs:sequence>
+      <xs:element name="delivery_services" type="DeliveryServicesDerived" minOccurs="1" maxOccurs="1">
+      </xs:element>
+      <xs:element name="rules" minOccurs="1">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="rule" type="MailerClientRuleConfig" minOccurs="1" maxOccurs="unbounded">
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>Id of the client that should be specified with the REST API request</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="MailerClientRuleConfig">
+    <xs:sequence>
+      <xs:element name="triggers" type="TriggerDerived" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>The list of triggers that activate the rule</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="actions" type="ActionDerived" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>The list of actions when</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>A name of the e-mail rule to use in loggin and error messsages</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:simpleType name="SecurityCategories">
+    <xs:restriction base="xs:NCName">
+      <xs:enumeration value="Unrestricted">
+      </xs:enumeration>
+      <xs:enumeration value="RestrictedExternal">
+      </xs:enumeration>
+      <xs:enumeration value="RestrictedInternal">
+      </xs:enumeration>
+      <xs:enumeration value="Secret">
+        <xs:annotation>
+          <xs:documentation>Secret</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="SecurityCategoryConfig">
+    <xs:attribute name="id" type="SecurityCategories" use="required">
+    </xs:attribute>
+    <xs:attribute name="text" type="xs:string" use="required">
+    </xs:attribute>
+    <xs:attribute name="msip_label" type="xs:string" use="required">
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="SmtpConfig">
+    <xs:complexContent>
+      <xs:extension base="DeliveryServiceConfig">
+        <xs:attribute name="use_ssl" type="xs:boolean" use="required">
+        </xs:attribute>
+        <xs:attribute name="login" type="xs:string" use="required">
+        </xs:attribute>
+        <xs:attribute name="password_encrypted" type="xs:string" use="required">
+        </xs:attribute>
+        <xs:attribute name="address" type="xs:string" use="required">
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="TestMailbox">
+    <xs:attribute name="id" type="xs:string" use="required">
+    </xs:attribute>
+    <xs:attribute name="email_to" type="xs:string" use="required">
+    </xs:attribute>
+    <xs:attribute name="description_to" type="xs:string" use="required">
+    </xs:attribute>
+    <xs:attribute name="email_from" type="xs:string" use="required">
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="TriggerBase">
+    <xs:attribute name="name" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>A name of the trigger to use in logging and error messsages</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="TriggerDerived">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="reply_in_conversation" type="reply_in_conversation" minOccurs="0" maxOccurs="unbounded">
+      </xs:element>
+      <xs:element name="redirected" type="redirected" minOccurs="0" maxOccurs="unbounded">
+      </xs:element>
+      <xs:element name="subject" type="subject" minOccurs="0" maxOccurs="unbounded">
+      </xs:element>
+      <xs:element name="body" type="body" minOccurs="0" maxOccurs="unbounded">
+      </xs:element>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="ack_email">
+    <xs:annotation>
+      <xs:documentation>Send email back with acknowledgement message</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="ActionBase">
+        <xs:attribute name="ack_message" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>The acknowledgement message in plain text</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="api_call">
+    <xs:annotation>
+      <xs:documentation>Call the API of the client system with the received e-mail</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="ActionBase">
+        <xs:attribute name="url" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>The url of the client's system REST API</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="body">
+    <xs:annotation>
+      <xs:documentation>This trigger is activated when e-mail contains certain string in its subject</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="TriggerBase">
+        <xs:attribute name="substring" type="xs:string" use="optional" default="">
+          <xs:annotation>
+            <xs:documentation>Substring to search for in the body of email</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="regex" type="xs:string" use="optional" default="">
+          <xs:annotation>
+            <xs:documentation>Regex to match against the body of email</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="redirected">
+    <xs:annotation>
+      <xs:documentation>This trigger is activated when received e-mail was redirected by exchange server</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="TriggerBase">
+        <xs:attribute name="redirected_from" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>The original e-mail it was sent to</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="reply_in_conversation">
+    <xs:annotation>
+      <xs:documentation>This trigger is activated when received e-mail is a reply to an earlier e-mail sent out</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="TriggerBase">
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="save_attachments">
+    <xs:annotation>
+      <xs:documentation>Save attachent to the folder specified</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="ActionBase">
+        <xs:attribute name="saving_folder" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>The path to the folder, where the attachments should be saved</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="save_eml">
+    <xs:annotation>
+      <xs:documentation>Save the eml-file represenation of the email to the folder specified</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="ActionBase">
+        <xs:attribute name="saving_folder" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>The path to the folder, where the eml file should be saved</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="subject">
+    <xs:annotation>
+      <xs:documentation>This trigger is activated when e-mail contains certain string in its subject</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="TriggerBase">
+        <xs:attribute name="substring" type="xs:string" use="optional" default="">
+          <xs:annotation>
+            <xs:documentation>Substring to search for in the subject of email</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="regex" type="xs:string" use="optional" default="">
+          <xs:annotation>
+            <xs:documentation>Regex to match against the subject of email</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+</xs:schema>
